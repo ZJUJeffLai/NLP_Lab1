@@ -36,13 +36,26 @@ class SpellCorrect:
     bestSentence = sentence[:] #copy of sentence
     bestScore = float('-inf')
     
-    for i in xrange(1, len(sentence) - 1): #ignore <s> and </s>
+    for i in range(1, len(sentence) - 1): #ignore <s> and </s>
       # TODO: select the maximum probability sentence here, according to the noisy channel model.
       # Tip: self.editModel.editProbabilities(word) gives edits and log-probabilities according to your edit model.
       #      You should iterate through these values instead of enumerating all edits.
       # Tip: self.languageModel.score(trialSentence) gives log-probability of a sentence
-      pass
-
+      
+      # Get the 2-dimension edits which includes word and corresponding score
+      edits = self.editModel.editProbabilities(sentence[i])
+      
+      # Try every word in edits
+      for word,score in edits:
+          try_wordscore = score
+          try_word = word
+          newSentence = sentence[:i] + [try_word] + sentence[(i+1):]
+          # Recalculate the total score of new sentence
+          total_try_score = self.languageModel.score(newSentence) + try_wordscore
+          
+          if total_try_score > bestScore: # Replace with the try_word
+              bestSentence = newSentence
+              bestScore = total_try_score
     return bestSentence
 
   def evaluate(self, corpus):  
@@ -82,41 +95,41 @@ def main():
   devPath = 'data/tagged-dev.dat'
   devCorpus = Corpus(devPath)
 
-  print 'Unigram Language Model: ' 
+  print ('Unigram Language Model: ')
   unigramLM = UnigramModel(trainingCorpus)
   unigramSpell = SpellCorrect(unigramLM, trainingCorpus)
   unigramOutcome = unigramSpell.evaluate(devCorpus)
-  print str(unigramOutcome)
+  print (str(unigramOutcome))
 
-  print 'Uniform Language Model: '
+  print ('Uniform Language Model: ')
   uniformLM = UniformModel(trainingCorpus)
   uniformSpell = SpellCorrect(uniformLM, trainingCorpus)
   uniformOutcome = uniformSpell.evaluate(devCorpus) 
-  print str(uniformOutcome)
+  print (str(uniformOutcome))
 
-  print 'Smooth Unigram Language Model: ' 
+  print ('Smooth Unigram Language Model: ') 
   smoothUnigramLM = SmoothUnigramModel(trainingCorpus)
   smoothUnigramSpell = SpellCorrect(smoothUnigramLM, trainingCorpus)
   smoothUnigramOutcome = smoothUnigramSpell.evaluate(devCorpus)
-  print str(smoothUnigramOutcome)
+  print (str(smoothUnigramOutcome))
 
-  print 'Smooth Bigram Language Model: '
+  print ('Smooth Bigram Language Model: ')
   smoothBigramLM = SmoothBigramModel(trainingCorpus)
   smoothBigramSpell = SpellCorrect(smoothBigramLM, trainingCorpus)
   smoothBigramOutcome = smoothBigramSpell.evaluate(devCorpus)
-  print str(smoothBigramOutcome)
+  print (str(smoothBigramOutcome))
 
-  print 'Backoff Language Model: '
+  print ('Backoff Language Model: ')
   backoffLM = BackoffModel(trainingCorpus)
   backoffSpell = SpellCorrect(backoffLM, trainingCorpus)
   backoffOutcome = backoffSpell.evaluate(devCorpus)
-  print str(backoffOutcome)
+  print (str(backoffOutcome))
 
-  print 'Custom Language Model: '
+  print ('Custom Language Model: ')
   customLM = CustomModel(trainingCorpus)
   customSpell = SpellCorrect(customLM, trainingCorpus)
   customOutcome = customSpell.evaluate(devCorpus)
-  print str(customOutcome)
+  print (str(customOutcome))
 
 if __name__ == "__main__":
     main()

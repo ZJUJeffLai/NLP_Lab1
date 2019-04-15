@@ -2,6 +2,9 @@ import math
 import collections
 from Corpus import Corpus
 
+# have been tranfromed to Python3.7
+# Please run with Python3.0+ version
+
 class Edit(object):
   """Holder object for edits (and the rules used to generate them)."""
   def __init__(self, editedWord, corruptLetters, correctLetters):
@@ -32,7 +35,8 @@ class EditModel(object):
       self.vocabulary = corpus.vocabulary()
 
     self.editCounts = {}
-    with open(editFile) as f:
+    #with open(editFile) as f:
+    with open(editFile,encoding = "ISO-8859-1") as f:
       for line in f:
         rule, countString = line.split("\t")
         self.editCounts[rule] = int(countString)
@@ -44,7 +48,7 @@ class EditModel(object):
 
     word = "<" + word #Append start character
     ret = []
-    for i in xrange(1, len(word)):
+    for i in range(1, len(word)):
       #The corrupted signal are this character and the character preceding
       corruptLetters = word[i-1:i+1] 
       #The correct signal is just the preceding character
@@ -63,14 +67,32 @@ class EditModel(object):
     # Tip: If inserting the letter 'a' as the second character in the word 'test', the corrupt
     #      signal is 't' and the correct signal is 'ta'. See slide 17 of the noisy channel model.
     word = "<" + word # append start token
-    return []
+    ret = []
+    for i in range(0,len(word)):
+        for letter in self.ALPHABET:
+            corruptLetters = word[i:(i+1)] 
+            correctLetters = word[i:(i+1)] + letter
+            correction = "%s%s%s" % (word[1:(i+1)],letter,word[(i+1):])
+            ret.append(Edit(correction,corruptLetters,correctLetters))
+    return ret
 
   def transposeEdits(self, word):
     """Returns a list of edits of 1-transpose distance words and rules used to generate them."""
     # TODO: write this
     # Tip: If tranposing letters 'te' in the word 'test', the corrupt signal is 'te'
     #      and the correct signal is 'et'. See slide 17 of the noisy channel model.
-    return []
+    ret = []
+    for i in range(1,len(word)):
+        corruptLetters = word[i-1:i+1]
+        correctLetters = corruptLetters[::-1]
+        if i == len(word)-1:
+            correction = "%s%s" % (word[:(i-1)],correctLetters)
+        elif i == 1:
+            correction = "%s%s" % (correctLetters, word[(i+1):])
+        else:
+            correction = "%s%s%s" % (word[:(i-1)], correctLetters, word[(i+1):])
+        ret.append(Edit(correction,corruptLetters,correctLetters))
+    return ret
 
   def replaceEdits(self, word):
     """Returns a list of edits of 1-replace distance words and rules used to generate them."""
@@ -78,7 +100,16 @@ class EditModel(object):
     # Tip: you might find EditModel.ALPHABET helpful
     # Tip: If replacing the letter 'e' with 'q' in the word 'test', the corrupt signal is 'e'
     #      and the correct signal is 'q'. See slide 17 of the noisy channel model.
-    return []
+    ret = []
+    for i in range(0,len(word)):
+        for letter in self.ALPHABET:
+            if letter == word[i]:
+                continue
+            corruptLetters = word[i]
+            correctLetters = letter
+            correction = "%s%s%s" % (word[:i],correctLetters,word[(i+1):])
+            ret.append(Edit(correction,corruptLetters,correctLetters))
+    return ret
 
   def edits(self, word):
     """Returns a list of tuples of 1-edit distance words and rules used to generate them, e.g. ("test", "te|et")"""
@@ -101,7 +132,9 @@ class EditModel(object):
         wordCounts[edit.editedWord] += ruleMass
 
     #Normalize by wordTotal to make probabilities
-    return [(word, math.log(float(mass) / wordTotal)) for word, mass in wordCounts.iteritems()]
+    #Transoform to Python3
+    #return [(word, math.log(float(mass) / wordTotal)) for word, mass in wordCounts.iteritems()]
+    return [(word, math.log(float(mass) / wordTotal)) for word, mass in wordCounts.items()]
 
 # Start: Sanity checking code.
 
@@ -110,9 +143,10 @@ def checkOverlap(edits, gold):
   percentage = 100 * float(len(edits & gold)) / len(gold)
   missing = gold - edits
   extra = edits - gold
-  print "\tOverlap: %s%%" % percentage
-  print "\tMissing edits: %s" % map(str, missing)
-  print "\tExtra edits: %s" % map(str, extra)
+  #Attention: Python3 print rules
+  print (("\tOverlap: %s%%") % percentage)
+  print (("\tMissing edits: %s") % map(str, missing))
+  print (("\tExtra edits: %s") % map(str, extra))
 
 def main():
   """Sanity checks the edit model on the word 'hi'."""
@@ -134,14 +168,14 @@ def main():
     Edit('hk','i','k'),Edit('hl','i','l'),Edit('hm','i','m'),Edit('hn','i','n'),Edit('ho','i','o'),Edit('hp','i','p'),Edit('hq','i','q'),Edit('hr','i','r'),Edit('hs','i','s'),Edit('ht','i','t'),
     Edit('hu','i','u'),Edit('hv','i','v'),Edit('hw','i','w'),Edit('hx','i','x'),Edit('hy','i','y'),Edit('hz','i','z')])
 
-  print "***Code Sanity Check***"
-  print "Delete edits for 'hi'"
+  print ("***Code Sanity Check***")
+  print ("Delete edits for 'hi'")
   checkOverlap(set(editModel.deleteEdits('hi')), DELETE_EDITS)
-  print "Insert edits for 'hi'"
+  print ("Insert edits for 'hi'")
   checkOverlap(set(editModel.insertEdits('hi')), INSERT_EDITS)
-  print "Transpose edits for 'hi'"
+  print ("Transpose edits for 'hi'")
   checkOverlap(set(editModel.transposeEdits('hi')), TRANPOSE_EDITS)
-  print "Replace edits for 'hi'"
+  print ("Replace edits for 'hi'")
   checkOverlap(set(editModel.replaceEdits('hi')), REPLACE_EDITS)
 
 if __name__ == "__main__":
